@@ -54,6 +54,30 @@ struct WhatProgress: ParsableCommand {
   
   // MARK: - Methods
 
+  mutating func validate() throws {
+    let hasCustomValues = start != nil || current != nil || end != nil
+
+    // Check for conflicting modes
+    if preset != nil && hasCustomValues {
+      throw ValidationError("Cannot specify both --preset and custom range options (--start, --current, --end).")
+    }
+
+    // Check for partial custom values
+    if hasCustomValues && !(start != nil && current != nil && end != nil) {
+      throw ValidationError("Custom range requires all three options: --start, --current, and --end.")
+    }
+
+    // Check for missing birthdate with life preset
+    if preset == .life && birthdate == nil {
+      throw ValidationError("The 'life' preset requires --birthdate.")
+    }
+
+    // Check for invalid range
+    if let s = start, let e = end, s >= e {
+      throw ValidationError("--start must be less than --end.")
+    }
+  }
+
   mutating func run() throws {
     let hasAnyArguments = preset != nil || start != nil || current != nil || end != nil
     guard hasAnyArguments else { throw CleanExit.helpRequest(self) }
