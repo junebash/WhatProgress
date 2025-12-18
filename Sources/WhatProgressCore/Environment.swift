@@ -5,7 +5,7 @@ public struct Environment: Sendable {
   public var timeZone: TimeZone
   public var locale: Locale
   public var date: Date
-
+  
   public init(
     calendar: Calendar = .autoupdatingCurrent,
     timeZone: TimeZone = .autoupdatingCurrent,
@@ -17,6 +17,6 @@ public struct Environment: Sendable {
     self.locale = locale
     self.date = date
   }
-
+  
   @TaskLocal public static var current: Self = Self()
 }

@@ -195,33 +195,52 @@ struct ProgressCalculatorTests {
   // MARK: - Custom Progress
 
   @Test("custom progress basic calculation")
-  func customProgressBasic() {
-    let progress = ProgressCalculator.customProgress(start: 0, current: 50, end: 100)
+  func customProgressBasic() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.customProgress(makeRange(start: 0, current: 50, end: 100))
     #expect(progress == 0.5)
   }
 
   @Test("custom progress at start")
-  func customProgressAtStart() {
-    let progress = ProgressCalculator.customProgress(start: 10, current: 10, end: 100)
+  func customProgressAtStart() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.customProgress(makeRange(start: 10, current: 10, end: 100))
     #expect(progress == 0.0)
   }
 
   @Test("custom progress at end")
-  func customProgressAtEnd() {
-    let progress = ProgressCalculator.customProgress(start: 0, current: 100, end: 100)
+  func customProgressAtEnd() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.customProgress(makeRange(start: 0, current: 100, end: 100))
     #expect(progress == 1.0)
   }
 
   @Test("custom progress can exceed 100%")
-  func customProgressOverflow() {
-    let progress = ProgressCalculator.customProgress(start: 0, current: 150, end: 100)
+  func customProgressOverflow() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.customProgress(makeRange(start: 0, current: 150, end: 100))
     #expect(progress == 1.5)
   }
 
-  @Test("custom progress negative is clamped to 0")
-  func customProgressUnderflow() {
-    let progress = ProgressCalculator.customProgress(start: 50, current: 25, end: 100)
-    #expect(progress == 0.0) // current < start, should clamp to 0
+  @Test("custom progress below start returns negative")
+  func customProgressUnderflow() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.customProgress(makeRange(start: 50, current: 25, end: 100))
+    #expect(progress == -0.5) // current < start yields negative progress
+  }
+
+  @Test("custom progress throws for invalid range")
+  func customProgressInvalidRange() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    do {
+      _ = try calc.customProgress(makeRange(start: 100, current: 50, end: 50))
+      Issue.record("Expected invalidRange error to be thrown")
+    } catch {
+      guard case .invalidRange = error else {
+        Issue.record("Expected invalidRange but got \(error)")
+        return
+      }
+    }
   }
 
   // MARK: - Helpers
@@ -247,5 +266,13 @@ struct ProgressCalculatorTests {
     components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
     return Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
+  }
+
+  private func makeRange(
+    start: Double,
+    current: Double,
+    end: Double
+  ) -> ParsedArguments.Progress.CustomRange {
+    ParsedArguments.Progress.CustomRange(start: start, current: current, end: end)
   }
 }
