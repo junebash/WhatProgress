@@ -43,15 +43,15 @@ struct ProgressCalculatorTests {
   @Test("week progress at start of week is 0%")
   func weekProgressAtStart() {
     // Create an environment at the very start of the week (Sunday Dec 14, 2025)
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.firstWeekday = 1 // Sunday
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 12, day: 14,
       hour: 0, minute: 0, second: 0
     )
+    components.timeZone = Self.testTimeZone
     let startOfWeek = calendar.date(from: components)!
 
-    let env = Environment(calendar: calendar, date: startOfWeek)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: startOfWeek)
     let calc = ProgressCalculator(environment: env)
     #expect(calc.weekProgress() == 0.0)
   }
@@ -59,17 +59,17 @@ struct ProgressCalculatorTests {
   @Test("week progress mid-week is approximately 50%")
   func weekProgressMidWeek() {
     // Wednesday noon in a Sunday-start week
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.firstWeekday = 1 // Sunday
+    let calendar = makeTestCalendar()
 
     // Sunday + 3.5 days = Wednesday noon
-    let components = DateComponents(
+    var components = DateComponents(
       year: 2025, month: 12, day: 17, // A Wednesday
       hour: 12, minute: 0, second: 0
     )
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
 
-    let env = Environment(calendar: calendar, date: date)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.weekProgress()
     #expect(progress > 0.45 && progress < 0.55)
@@ -79,13 +79,14 @@ struct ProgressCalculatorTests {
 
   @Test("month progress on first day at midnight is 0%")
   func monthProgressAtStart() {
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 12, day: 1,
       hour: 0, minute: 0, second: 0
     )
-    let calendar = Calendar(identifier: .gregorian)
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
-    let env = Environment(calendar: calendar, date: date)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
     let calc = ProgressCalculator(environment: env)
     #expect(calc.monthProgress() == 0.0)
   }
@@ -93,13 +94,14 @@ struct ProgressCalculatorTests {
   @Test("month progress mid-month is approximately 50%")
   func monthProgressMidMonth() {
     // December has 31 days, so day 16 at noon should be ~50%
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 12, day: 16,
       hour: 12, minute: 0, second: 0
     )
-    let calendar = Calendar(identifier: .gregorian)
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
-    let env = Environment(calendar: calendar, date: date)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.monthProgress()
     #expect(progress > 0.45 && progress < 0.55)
@@ -109,13 +111,14 @@ struct ProgressCalculatorTests {
 
   @Test("year progress on Jan 1 at midnight is 0%")
   func yearProgressAtStart() {
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 1, day: 1,
       hour: 0, minute: 0, second: 0
     )
-    let calendar = Calendar(identifier: .gregorian)
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
-    let env = Environment(calendar: calendar, date: date)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
     let calc = ProgressCalculator(environment: env)
     #expect(calc.yearProgress() == 0.0)
   }
@@ -123,13 +126,14 @@ struct ProgressCalculatorTests {
   @Test("year progress mid-year is approximately 50%")
   func yearProgressMidYear() {
     // July 2 at noon is approximately mid-year
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 7, day: 2,
       hour: 12, minute: 0, second: 0
     )
-    let calendar = Calendar(identifier: .gregorian)
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
-    let env = Environment(calendar: calendar, date: date)
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.yearProgress()
     #expect(progress > 0.45 && progress < 0.55)
@@ -139,11 +143,16 @@ struct ProgressCalculatorTests {
 
   @Test("lifetime progress for 50-year-old with 100-year lifespan is 50%")
   func lifetimeProgressAt50() {
-    let calendar = Calendar(identifier: .gregorian)
-    let birthdate = calendar.date(from: DateComponents(year: 1975, month: 6, day: 15))!
-    let currentDate = calendar.date(from: DateComponents(year: 2025, month: 6, day: 15))!
+    let calendar = makeTestCalendar()
+    var birthComponents = DateComponents(year: 1975, month: 6, day: 15)
+    birthComponents.timeZone = Self.testTimeZone
+    var currentComponents = DateComponents(year: 2025, month: 6, day: 15)
+    currentComponents.timeZone = Self.testTimeZone
 
-    let env = Environment(calendar: calendar, date: currentDate)
+    let birthdate = calendar.date(from: birthComponents)!
+    let currentDate = calendar.date(from: currentComponents)!
+
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.lifetimeProgress(birthdate: birthdate, expectedLifespan: 100)
     #expect(progress == 0.5)
@@ -151,11 +160,16 @@ struct ProgressCalculatorTests {
 
   @Test("lifetime progress can exceed 100% if older than expected lifespan")
   func lifetimeProgressOverflow() {
-    let calendar = Calendar(identifier: .gregorian)
-    let birthdate = calendar.date(from: DateComponents(year: 1920, month: 1, day: 1))!
-    let currentDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+    let calendar = makeTestCalendar()
+    var birthComponents = DateComponents(year: 1920, month: 1, day: 1)
+    birthComponents.timeZone = Self.testTimeZone
+    var currentComponents = DateComponents(year: 2025, month: 1, day: 1)
+    currentComponents.timeZone = Self.testTimeZone
 
-    let env = Environment(calendar: calendar, date: currentDate)
+    let birthdate = calendar.date(from: birthComponents)!
+    let currentDate = calendar.date(from: currentComponents)!
+
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.lifetimeProgress(birthdate: birthdate, expectedLifespan: 100)
     #expect(progress > 1.0) // 105 years old
@@ -163,11 +177,16 @@ struct ProgressCalculatorTests {
 
   @Test("lifetime progress with custom lifespan")
   func lifetimeProgressCustomLifespan() {
-    let calendar = Calendar(identifier: .gregorian)
-    let birthdate = calendar.date(from: DateComponents(year: 2000, month: 1, day: 1))!
-    let currentDate = calendar.date(from: DateComponents(year: 2025, month: 1, day: 1))!
+    let calendar = makeTestCalendar()
+    var birthComponents = DateComponents(year: 2000, month: 1, day: 1)
+    birthComponents.timeZone = Self.testTimeZone
+    var currentComponents = DateComponents(year: 2025, month: 1, day: 1)
+    currentComponents.timeZone = Self.testTimeZone
 
-    let env = Environment(calendar: calendar, date: currentDate)
+    let birthdate = calendar.date(from: birthComponents)!
+    let currentDate = calendar.date(from: currentComponents)!
+
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.lifetimeProgress(birthdate: birthdate, expectedLifespan: 50)
     #expect(progress == 0.5) // 25 years old, 50 year lifespan
@@ -207,13 +226,26 @@ struct ProgressCalculatorTests {
 
   // MARK: - Helpers
 
+  /// Fixed timezone for deterministic tests
+  private static let testTimeZone = TimeZone(identifier: "America/Los_Angeles")!
+
+  /// Creates a calendar configured for deterministic testing
+  private func makeTestCalendar() -> Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = Self.testTimeZone
+    calendar.locale = Locale(identifier: "en_US")
+    calendar.firstWeekday = 1 // Sunday
+    return calendar
+  }
+
   private func makeEnvironment(hour: Int, minute: Int, second: Int) -> Environment {
-    let calendar = Calendar(identifier: .gregorian)
-    let components = DateComponents(
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
       year: 2025, month: 12, day: 18,
       hour: hour, minute: minute, second: second
     )
+    components.timeZone = Self.testTimeZone
     let date = calendar.date(from: components)!
-    return Environment(calendar: calendar, date: date)
+    return Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
   }
 }
