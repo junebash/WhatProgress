@@ -19,7 +19,7 @@ struct WhatProgress: ParsableCommand {
 
   // MARK: - Mode Selection
 
-  @Option(name: .shortAndLong, help: "Preset time period (day, week, month, year, life)")
+  @Option(name: .shortAndLong, help: "Preset time period")
   var preset: PresetKey?
 
   // MARK: - Custom Range
@@ -38,7 +38,7 @@ struct WhatProgress: ParsableCommand {
   @Option(name: .shortAndLong, help: "Birthdate for lifetime progress (YYYY-MM-DD)")
   var birthdate: String?
 
-  @Option(name: .long, help: "Expected lifespan in years (default: 100)")
+  @Option(name: .long, help: "Expected lifespan in years")
   var expectedLifespan: Int = 100
 
   // MARK: - Display Options
@@ -46,10 +46,10 @@ struct WhatProgress: ParsableCommand {
   @Option(name: .shortAndLong, help: "Title to display with the progress bar")
   var title: String?
 
-  @Option(name: .long, help: "Position of title: above or left (default: left)")
+  @Option(name: .long, help: "Position of title relative to bar")
   var titlePosition: TitlePosition = .left
 
-  @Option(name: .long, help: "Bar style: modern or ascii (default: modern)")
+  @Option(name: .long, help: "Bar style")
   var style: StyleKey = .modern
   
   // MARK: - Methods
