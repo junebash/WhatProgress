@@ -71,7 +71,7 @@ struct ParsedArguments: Sendable, Equatable {
     ).render()
   }
 
-  private static func parsePreset(
+  static func parsePreset(
     _ preset: PresetKey,
     birthdateString: String?,
     expectedLifespan: Int,
@@ -109,7 +109,7 @@ struct ParsedArguments: Sendable, Equatable {
     }
   }
 
-  private static func parseCustomRange(
+  static func parseCustomRange(
     _ arguments: Arguments
   ) throws(WhatProgressError) -> Progress {
     guard

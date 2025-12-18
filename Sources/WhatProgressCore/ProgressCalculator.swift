@@ -47,9 +47,8 @@ public struct ProgressCalculator: Sendable {
     let calendar = environment.calendar
     let date = environment.date
 
-    guard let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: date)?.start else {
-      return 0.0
-    }
+    guard let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: date)?.start
+    else { return 0.0 }
 
     let secondsSinceWeekStart = date.timeIntervalSince(startOfWeek)
     let secondsInWeek: Double = 7 * 24 * 60 * 60
@@ -62,9 +61,8 @@ public struct ProgressCalculator: Sendable {
     let calendar = environment.calendar
     let date = environment.date
 
-    guard let monthInterval = calendar.dateInterval(of: .month, for: date) else {
-      return 0.0
-    }
+    guard let monthInterval = calendar.dateInterval(of: .month, for: date)
+    else { return 0.0 }
 
     let secondsSinceMonthStart = date.timeIntervalSince(monthInterval.start)
     let secondsInMonth = monthInterval.duration
@@ -77,9 +75,7 @@ public struct ProgressCalculator: Sendable {
     let calendar = environment.calendar
     let date = environment.date
 
-    guard let yearInterval = calendar.dateInterval(of: .year, for: date) else {
-      return 0.0
-    }
+    guard let yearInterval = calendar.dateInterval(of: .year, for: date) else { return 0.0 }
 
     let secondsSinceYearStart = date.timeIntervalSince(yearInterval.start)
     let secondsInYear = yearInterval.duration

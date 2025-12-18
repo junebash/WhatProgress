@@ -55,16 +55,22 @@ struct WhatProgress: ParsableCommand {
   // MARK: - Methods
 
   mutating func validate() throws {
-    let hasCustomValues = start != nil || current != nil || end != nil
+    lazy var hasCustomValues = start != nil || current != nil || end != nil
+    let hasAnyArguments = preset != nil || hasCustomValues
+    guard hasAnyArguments else { throw CleanExit.helpRequest(self) }
 
     // Check for conflicting modes
     if preset != nil && hasCustomValues {
-      throw ValidationError("Cannot specify both --preset and custom range options (--start, --current, --end).")
+      throw ValidationError(
+        "Cannot specify both --preset and custom range options (--start, --current, --end)."
+      )
     }
 
     // Check for partial custom values
     if hasCustomValues && !(start != nil && current != nil && end != nil) {
-      throw ValidationError("Custom range requires all three options: --start, --current, and --end.")
+      throw ValidationError(
+        "Custom range requires all three options: --start, --current, and --end."
+      )
     }
 
     // Check for missing birthdate with life preset
@@ -79,23 +85,20 @@ struct WhatProgress: ParsableCommand {
   }
 
   mutating func run() throws {
-    let hasAnyArguments = preset != nil || start != nil || current != nil || end != nil
-    guard hasAnyArguments else { throw CleanExit.helpRequest(self) }
-
-    let arguments = Arguments(
-      preset: preset,
-      start: start,
-      current: current,
-      end: end,
-      birthdate: birthdate,
-      expectedLifespan: expectedLifespan,
-      title: title,
-      titlePosition: titlePosition,
-      style: style
+    print(
+      try Arguments(
+        preset: preset,
+        start: start,
+        current: current,
+        end: end,
+        birthdate: birthdate,
+        expectedLifespan: expectedLifespan,
+        title: title,
+        titlePosition: titlePosition,
+        style: style
+      )
+      .parseToOutput(environment: .current)
     )
-
-    let output = try arguments.parseToOutput(environment: .current)
-    print(output)
   }
 }
 
