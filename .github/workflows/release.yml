@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v0.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -74,8 +80,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Extract version from tag
-          VERSION="${GITHUB_REF#refs/tags/}"
+          # Extract version from tag or manual input
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
 
           # Create release notes
           echo "# WhatProgress ${VERSION}" > release_notes.md
