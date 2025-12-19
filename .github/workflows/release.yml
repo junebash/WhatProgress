@@ -54,9 +54,7 @@ jobs:
 
       - name: Package binary
         run: |
-          cd .build/release
-          tar -czf whatprogress-linux-x86_64.tar.gz WhatProgress
-          mv whatprogress-linux-x86_64.tar.gz ${{ github.workspace }}/
+          tar -czf whatprogress-linux-x86_64.tar.gz -C .build/release WhatProgress
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
