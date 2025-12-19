@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS binaries
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build for ${{ matrix.arch }}
+        run: |
+          swift build -c release --arch ${{ matrix.arch }}
+
+      - name: Package binary
+        run: |
+          cd .build/${{ matrix.arch }}-apple-macosx/release
+          tar -czf whatprogress-macos-${{ matrix.arch }}.tar.gz WhatProgress
+          mv whatprogress-macos-${{ matrix.arch }}.tar.gz ${{ github.workspace }}/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatprogress-macos-${{ matrix.arch }}
+          path: whatprogress-macos-${{ matrix.arch }}.tar.gz
+
+  build-linux:
+    name: Build Linux binary
+    runs-on: ubuntu-latest
+    container:
+      image: swift:6.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build for Linux
+        run: |
+          swift build -c release
+
+      - name: Package binary
+        run: |
+          cd .build/release
+          tar -czf whatprogress-linux-x86_64.tar.gz WhatProgress
+          mv whatprogress-linux-x86_64.tar.gz ${{ github.workspace }}/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatprogress-linux-x86_64
+          path: whatprogress-linux-x86_64.tar.gz
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Extract version from tag
+          VERSION="${GITHUB_REF#refs/tags/}"
+
+          # Create release notes
+          echo "# WhatProgress ${VERSION}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Installation" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### macOS" >> release_notes.md
+          echo '```bash' >> release_notes.md
+          echo "# For Apple Silicon (M1/M2/M3):" >> release_notes.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/${VERSION}/whatprogress-macos-arm64.tar.gz | tar xz" >> release_notes.md
+          echo "sudo mv WhatProgress /usr/local/bin/whatprogress" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "# For Intel:" >> release_notes.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/${VERSION}/whatprogress-macos-x86_64.tar.gz | tar xz" >> release_notes.md
+          echo "sudo mv WhatProgress /usr/local/bin/whatprogress" >> release_notes.md
+          echo '```' >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Linux" >> release_notes.md
+          echo '```bash' >> release_notes.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/${VERSION}/whatprogress-linux-x86_64.tar.gz | tar xz" >> release_notes.md
+          echo "sudo mv WhatProgress /usr/local/bin/whatprogress" >> release_notes.md
+          echo '```' >> release_notes.md
+
+          # Create release
+          gh release create "${VERSION}" \
+            --title "WhatProgress ${VERSION}" \
+            --notes-file release_notes.md \
+            artifacts/**/*.tar.gz

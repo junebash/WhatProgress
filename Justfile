@@ -34,3 +34,10 @@ uninstall:
 # Clean build artifacts
 clean:
   swift package clean
+
+# Create a new release tag (example: just tag 1.0.0)
+tag version:
+  @echo "Creating release v{{version}}"
+  @git tag -a "v{{version}}" -m "Release v{{version}}"
+  @echo "Tag created. Push with: git push origin v{{version}}"
+  @echo "This will trigger the GitHub Actions release workflow."

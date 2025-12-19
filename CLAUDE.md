@@ -34,7 +34,30 @@ just uninstall
 
 # Clean build artifacts
 just clean
+
+# Create and push a release tag
+just tag 1.0.0
+git push origin v1.0.0
 ```
+
+## Releases
+
+GitHub Actions automatically builds and publishes releases when you push a version tag:
+
+```bash
+# Create a release tag (e.g., v1.0.0)
+just tag 1.0.0
+
+# Push the tag to trigger the release workflow
+git push origin v1.0.0
+```
+
+The workflow builds binaries for:
+- macOS arm64 (Apple Silicon)
+- macOS x86_64 (Intel)
+- Linux x86_64
+
+Binaries are automatically attached to the GitHub release with installation instructions.
 
 ## Architecture
 
