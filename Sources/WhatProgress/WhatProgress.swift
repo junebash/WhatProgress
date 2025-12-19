@@ -1,6 +1,5 @@
 import ArgumentParser
 import Foundation
-import WhatProgressCore
 
 @main
 struct WhatProgress: ParsableCommand {
@@ -52,11 +51,19 @@ struct WhatProgress: ParsableCommand {
   @Option(name: .long, help: "Bar style")
   var style: StyleKey = .modern
   
+  @Option(name: .shortAndLong, help: "Bar width")
+  var width: Int = 20
+  
+  var hasCustomValues: Bool {
+    start != nil || current != nil || end != nil
+  }
+  var hasAnyArguments: Bool {
+    preset != nil || hasCustomValues
+  }
+  
   // MARK: - Methods
 
   mutating func validate() throws {
-    lazy var hasCustomValues = start != nil || current != nil || end != nil
-    let hasAnyArguments = preset != nil || hasCustomValues
     guard hasAnyArguments else { throw CleanExit.helpRequest(self) }
 
     // Check for conflicting modes
@@ -83,23 +90,62 @@ struct WhatProgress: ParsableCommand {
       throw ValidationError("--start must be less than --end.")
     }
   }
-
+  
   mutating func run() throws {
-    print(
-      try Arguments(
-        preset: preset,
-        start: start,
-        current: current,
-        end: end,
-        birthdate: birthdate,
-        expectedLifespan: expectedLifespan,
-        title: title,
-        titlePosition: titlePosition,
-        style: style
-      )
-      .parseToOutput(environment: .current)
-    )
+    Environment.current.print(try render(environment: .current))
   }
+  
+  func render(environment: Environment) throws -> String {
+    try ParsedArguments(
+      progress: progress(),
+      title: title.map { ParsedArguments.TitleOptions(title: $0, position: titlePosition) },
+      style: {
+        switch style {
+        case .modern: .barFill(.modern(width: width))
+        case .ascii: .barFill(.ascii(width: width))
+        }
+      }()
+    )
+    .render(environment: environment)
+  }
+  
+  func progress() throws -> ParsedArguments.Progress {
+    if let preset {
+      return try ParsedArguments.parsePreset(
+        preset,
+        birthdateString: birthdate,
+        expectedLifespan: expectedLifespan,
+        environment: .current
+      )
+    } else if hasCustomValues {
+      let (start, current, end) = try zip(start, current, end).orThrow(
+        ValidationError(
+          "Custom range requires all three options: --start, --current, and --end."
+        )
+      )
+      if start >= end { throw WhatProgressError.invalidRange }
+      return .customRange(
+        ParsedArguments.Progress.CustomRange(start: start, current: current, end: end)
+      )
+    } else {
+      throw ValidationError(
+        "Must specify either --preset or custom range options (--start, --current, --end)."
+      )
+    }
+  }
+}
+
+enum PresetKey: String, CaseIterable, Sendable {
+  case day
+  case week
+  case month
+  case year
+  case life
+}
+
+enum StyleKey: String, CaseIterable, Sendable {
+  case modern
+  case ascii
 }
 
 extension TitlePosition: ExpressibleByArgument {}

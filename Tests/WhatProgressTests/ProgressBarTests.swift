@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import WhatProgressCore
+@testable import WhatProgress
 
 @Suite("ProgressBar Rendering")
 struct ProgressBarTests {

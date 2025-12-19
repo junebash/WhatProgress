@@ -1,5 +1,7 @@
+import CasePaths
 import Foundation
 
+@CasePathable
 public enum TitlePosition: String, Sendable {
   case above
   case left

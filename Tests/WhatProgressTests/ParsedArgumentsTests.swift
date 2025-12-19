@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import WhatProgressCore
+@testable import WhatProgress
 
 @Suite("ParsedArguments.parsePreset")
 struct ParsedArgumentsTests {
@@ -68,20 +68,14 @@ struct ParsedArgumentsTests {
       expectedLifespan: 80,
       environment: makeEnvironment()
     )
-
-    guard case .preset(.life(let options)) = result else {
-      Issue.record("Expected .preset(.life) but got \(result)")
-      return
-    }
-
+    let options = try #require(result.preset?.life)
     #expect(options.expectedLifespan == 80)
 
     // Verify the parsed birthdate
     let calendar = makeTestCalendar()
     var expectedComponents = DateComponents(year: 1990, month: 6, day: 15)
     expectedComponents.timeZone = Self.testTimeZone
-    let expectedDate = calendar.date(from: expectedComponents)!
-
+    let expectedDate = try #require(calendar.date(from: expectedComponents))
     #expect(options.birthdate == expectedDate)
   }
 
@@ -93,12 +87,7 @@ struct ParsedArgumentsTests {
       expectedLifespan: 100,
       environment: makeEnvironment()
     )
-
-    guard case .preset(.life(let options)) = result else {
-      Issue.record("Expected .preset(.life) but got \(result)")
-      return
-    }
-
+    let options = try #require(result.preset?.life)
     #expect(options.expectedLifespan == 100)
   }
 
@@ -106,73 +95,54 @@ struct ParsedArgumentsTests {
 
   @Test("parsePreset throws missingBirthdate when birthdate is nil")
   func parsePresetLifeMissingBirthdate() {
-    do {
+    #expect(throws: WhatProgressError.missingBirthdate) {
       _ = try ParsedArguments.parsePreset(
         .life,
         birthdateString: nil,
         expectedLifespan: 100,
         environment: makeEnvironment()
       )
-      Issue.record("Expected missingBirthdate error")
-    } catch {
-      guard case .missingBirthdate = error else {
-        Issue.record("Expected missingBirthdate but got \(error)")
-        return
-      }
     }
   }
 
   @Test("parsePreset throws invalidBirthdateFormat for malformed date")
-  func parsePresetLifeInvalidFormat() {
-    do {
+  func parsePresetLifeInvalidFormat() throws {
+    let error = try #require(throws: WhatProgressError.self) {
       _ = try ParsedArguments.parsePreset(
         .life,
         birthdateString: "not-a-date",
         expectedLifespan: 100,
         environment: makeEnvironment()
       )
-      Issue.record("Expected invalidBirthdateFormat error")
-    } catch {
-      guard case .invalidBirthdateFormat = error else {
-        Issue.record("Expected invalidBirthdateFormat but got \(error)")
-        return
-      }
     }
+    #expect(error.is(\.invalidBirthdateFormat), "Expected invalidBirthdateFormat error, got \(error)")
   }
 
   @Test("parsePreset throws invalidBirthdateFormat for wrong format")
-  func parsePresetLifeWrongFormat() {
-    do {
+  func parsePresetLifeWrongFormat() throws {
+    let error = try #require(throws: WhatProgressError.self) {
       _ = try ParsedArguments.parsePreset(
         .life,
         birthdateString: "06/15/1990",
         expectedLifespan: 100,
         environment: makeEnvironment()
       )
-      Issue.record("Expected invalidBirthdateFormat error")
-    } catch {
-      guard case .invalidBirthdateFormat = error else {
-        Issue.record("Expected invalidBirthdateFormat but got \(error)")
-        return
-      }
     }
+    #expect(
+      error.is(\.invalidBirthdateFormat),
+      "Expected invalidBirthdateFormat error, got \(error)"
+    )
   }
 
   @Test("parsePreset throws birthdateInFuture when date is after current date")
   func parsePresetLifeFutureBirthdate() {
-    do {
+    #expect(throws: WhatProgressError.birthdateInFuture) {
       _ = try ParsedArguments.parsePreset(
         .life,
         birthdateString: "2030-01-01",
         expectedLifespan: 100,
         environment: makeEnvironment()
       )
-      Issue.record("Expected birthdateInFuture error")
-    } catch {
-      guard case .birthdateInFuture = error else {
-        Issue.record("Expected birthdateInFuture but got \(error)")
-        return
-      }
     }
   }
 
@@ -184,11 +154,7 @@ struct ParsedArgumentsTests {
       expectedLifespan: 100,
       environment: makeEnvironment()
     )
-
-    guard case .preset(.life) = result else {
-      Issue.record("Expected .preset(.life) but got \(result)")
-      return
-    }
+    #expect(result.preset.is(\.life))
   }
 
   // MARK: - Helpers

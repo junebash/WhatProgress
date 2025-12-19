@@ -1,7 +1,10 @@
-public enum WhatProgressError: Error, CustomStringConvertible {
+import CasePaths
+
+@CasePathable
+public enum WhatProgressError: Error, CustomStringConvertible, Equatable {
   case missingArguments
   case missingBirthdate
-  case invalidBirthdateFormat(any Error)
+  case invalidBirthdateFormat(description: String)
   case birthdateInFuture
   case invalidRange
   case conflictingModes

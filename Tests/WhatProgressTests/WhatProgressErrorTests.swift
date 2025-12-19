@@ -1,19 +1,10 @@
 import Foundation
 import Testing
 
-@testable import WhatProgressCore
+@testable import WhatProgress
 
 @Suite("WhatProgressError Descriptions")
 struct WhatProgressErrorTests {
-
-  @Test("missingArguments error description from parseCustomRange")
-  func missingArgumentsDescription() throws {
-    let args = Arguments(start: 0, current: 50) // missing end
-    let error = try #require(throws: WhatProgressError.self) {
-      try ParsedArguments.parseCustomRange(args)
-    }
-    #expect(error.description == "Custom mode requires --start, --current, and --end values.")
-  }
 
   @Test("missingBirthdate error description from parsePreset")
   func missingBirthdateDescription() throws {
@@ -54,32 +45,14 @@ struct WhatProgressErrorTests {
     #expect(error.description == "Birthdate cannot be in the future.")
   }
 
-  @Test("invalidRange error description from parseCustomRange")
-  func invalidRangeDescription() throws {
-    let args = Arguments(start: 100, current: 50, end: 50)
-    let error = try #require(throws: WhatProgressError.self) {
-      try ParsedArguments.parseCustomRange(args)
-    }
-    #expect(error.description == "Start value must be less than end value.")
-  }
-
   @Test("invalidRange error description from customProgress")
   func invalidRangeDescriptionFromCustomProgress() throws {
     let calc = ProgressCalculator(environment: makeEnvironment())
     let range = ParsedArguments.Progress.CustomRange(start: 100, current: 50, end: 50)
     let error = try #require(throws: WhatProgressError.self) {
-      try calc.customProgress(range)
+      try calc.calculate(.customRange(range))
     }
     #expect(error.description == "Start value must be less than end value.")
-  }
-
-  @Test("conflictingModes error description from parse")
-  func conflictingModesDescription() throws {
-    let args = Arguments(preset: .day, start: 0, current: 50, end: 100)
-    let error = try #require(throws: WhatProgressError.self) {
-      try ParsedArguments.parse(args, environment: makeEnvironment())
-    }
-    #expect(error.description == "Cannot specify both preset and custom values. Choose one mode.")
   }
 
   // MARK: - Helpers
