@@ -141,7 +141,7 @@ struct ProgressCalculatorTests {
 
   // MARK: - Lifetime Progress
 
-  @Test("lifetime progress for 50-year-old with 100-year lifespan is 50%")
+  @Test("lifetime progress for 50-year-old with 100-year lifespan is ~50%")
   func lifetimeProgressAt50() {
     let calendar = makeTestCalendar()
     var birthComponents = DateComponents(year: 1975, month: 6, day: 15)
@@ -155,7 +155,8 @@ struct ProgressCalculatorTests {
     let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.lifetimeProgress(birthdate: birthdate, expectedLifespan: 100)
-    #expect(progress == 0.5)
+    // Not exactly 0.5 due to leap year distribution across the lifespan
+    #expect(progress > 0.499 && progress < 0.501)
   }
 
   @Test("lifetime progress can exceed 100% if older than expected lifespan")
@@ -189,7 +190,108 @@ struct ProgressCalculatorTests {
     let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
     let calc = ProgressCalculator(environment: env)
     let progress = calc.lifetimeProgress(birthdate: birthdate, expectedLifespan: 50)
-    #expect(progress == 0.5) // 25 years old, 50 year lifespan
+    // 25 years old, 50 year lifespan - not exactly 0.5 due to leap year distribution
+    #expect(progress > 0.499 && progress < 0.501)
+  }
+
+  // MARK: - Calculate (main switch method)
+
+  @Test("calculate with day preset")
+  func calculateDayPreset() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let progress = try calc.calculate(.preset(.day))
+    #expect(progress == 0.5)
+  }
+
+  @Test("calculate with week preset")
+  func calculateWeekPreset() throws {
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
+      year: 2025, month: 12, day: 17,
+      hour: 12, minute: 0, second: 0
+    )
+    components.timeZone = Self.testTimeZone
+    let date = calendar.date(from: components)!
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
+    let calc = ProgressCalculator(environment: env)
+    let progress = try calc.calculate(.preset(.week))
+    #expect(progress > 0.45 && progress < 0.55)
+  }
+
+  @Test("calculate with month preset")
+  func calculateMonthPreset() throws {
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
+      year: 2025, month: 12, day: 16,
+      hour: 12, minute: 0, second: 0
+    )
+    components.timeZone = Self.testTimeZone
+    let date = calendar.date(from: components)!
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
+    let calc = ProgressCalculator(environment: env)
+    let progress = try calc.calculate(.preset(.month))
+    #expect(progress > 0.45 && progress < 0.55)
+  }
+
+  @Test("calculate with year preset")
+  func calculateYearPreset() throws {
+    let calendar = makeTestCalendar()
+    var components = DateComponents(
+      year: 2025, month: 7, day: 2,
+      hour: 12, minute: 0, second: 0
+    )
+    components.timeZone = Self.testTimeZone
+    let date = calendar.date(from: components)!
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: date)
+    let calc = ProgressCalculator(environment: env)
+    let progress = try calc.calculate(.preset(.year))
+    #expect(progress > 0.45 && progress < 0.55)
+  }
+
+  @Test("calculate with life preset")
+  func calculateLifePreset() throws {
+    let calendar = makeTestCalendar()
+    var birthComponents = DateComponents(year: 1975, month: 6, day: 15)
+    birthComponents.timeZone = Self.testTimeZone
+    var currentComponents = DateComponents(year: 2025, month: 6, day: 15)
+    currentComponents.timeZone = Self.testTimeZone
+
+    let birthdate = calendar.date(from: birthComponents)!
+    let currentDate = calendar.date(from: currentComponents)!
+
+    let env = Environment(calendar: calendar, timeZone: Self.testTimeZone, date: currentDate)
+    let calc = ProgressCalculator(environment: env)
+
+    let options = ParsedArguments.Progress.LifetimeOptions(
+      birthdate: birthdate,
+      expectedLifespan: 100
+    )
+    let progress = try calc.calculate(.preset(.life(options)))
+    // Not exactly 0.5 due to leap year distribution across the lifespan
+    #expect(progress > 0.499 && progress < 0.501)
+  }
+
+  @Test("calculate with custom range")
+  func calculateCustomRange() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let range = makeRange(start: 0, current: 50, end: 100)
+    let progress = try calc.calculate(.customRange(range))
+    #expect(progress == 0.5)
+  }
+
+  @Test("calculate with custom range throws for invalid range")
+  func calculateCustomRangeInvalid() throws {
+    let calc = ProgressCalculator(environment: makeEnvironment(hour: 12, minute: 0, second: 0))
+    let range = makeRange(start: 100, current: 50, end: 50)
+    do {
+      _ = try calc.calculate(.customRange(range))
+      Issue.record("Expected invalidRange error to be thrown")
+    } catch {
+      guard case .invalidRange = error else {
+        Issue.record("Expected invalidRange but got \(error)")
+        return
+      }
+    }
   }
 
   // MARK: - Custom Progress

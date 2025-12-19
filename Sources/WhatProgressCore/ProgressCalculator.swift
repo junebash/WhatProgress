@@ -88,15 +88,18 @@ public struct ProgressCalculator: Sendable {
     let calendar = environment.calendar
     let date = environment.date
 
-    let ageComponents = calendar.dateComponents([.year, .month, .day], from: birthdate, to: date)
-    let years = Double(ageComponents.year ?? 0)
-    let months = Double(ageComponents.month ?? 0)
-    let days = Double(ageComponents.day ?? 0)
+    // Calculate the expected end of life date using calendar arithmetic
+    guard let expectedEndDate = calendar.date(
+      byAdding: .year,
+      value: expectedLifespan,
+      to: birthdate
+    ) else { return 0.0 }
 
-    // Approximate age in years
-    let ageInYears = years + (months / 12.0) + (days / 365.0)
+    // Use precise time intervals
+    let totalLifespanSeconds = expectedEndDate.timeIntervalSince(birthdate)
+    let elapsedSeconds = date.timeIntervalSince(birthdate)
 
-    return ageInYears / Double(expectedLifespan)
+    return elapsedSeconds / totalLifespanSeconds
   }
 
   /// Calculate custom progress from start to end
