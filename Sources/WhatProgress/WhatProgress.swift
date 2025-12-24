@@ -40,6 +40,11 @@ struct WhatProgress: ParsableCommand {
   @Option(name: .long, help: "Expected lifespan in years")
   var expectedLifespan: Int = 100
 
+  // MARK: - Date Override
+
+  @Option(name: .long, help: "Override current date (YYYY-MM-DD format)")
+  var date: String?
+
   // MARK: - Display Options
 
   @Option(name: .shortAndLong, help: "Title to display with the progress bar")
@@ -53,7 +58,24 @@ struct WhatProgress: ParsableCommand {
   
   @Option(name: .shortAndLong, help: "Bar width")
   var width: Int = 20
-  
+
+  // MARK: - Grid Options
+
+  @Option(name: .long, help: "Symbol for filled/past days (grid style, single character)")
+  var filledSymbol: String?
+
+  @Option(name: .long, help: "Symbol for empty/future days (grid style, single character)")
+  var emptySymbol: String?
+
+  @Option(name: .long, help: "Symbol for today (grid style, single character)")
+  var todaySymbol: String?
+
+  @Flag(name: .long, help: "Show month labels (grid style)")
+  var showMonthLabels: Bool = false
+
+  @Option(name: .long, help: "View a specific year (grid style)")
+  var year: Int?
+
   var hasCustomValues: Bool {
     start != nil || current != nil || end != nil
   }
@@ -89,33 +111,70 @@ struct WhatProgress: ParsableCommand {
     if let s = start, let e = end, s >= e {
       throw ValidationError("--start must be less than --end.")
     }
+
+    // Check for grid style requiring year preset
+    if style == .grid && preset != .year {
+      throw ValidationError("The 'grid' style requires the 'year' preset (-p year).")
+    }
   }
   
   mutating func run() throws {
-    Environment.current.print(try render(environment: .current))
+    let env = try environmentWithDateOverride(.current)
+    env.print(try render(environment: env))
   }
-  
+
+  func environmentWithDateOverride(_ base: Environment) throws -> Environment {
+    guard let dateString = date else { return base }
+    let parser = Date.VerbatimFormatStyle(
+      format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
+      locale: base.locale,
+      timeZone: base.timeZone,
+      calendar: base.calendar
+    ).parseStrategy
+    let parsedDate: Date
+    do {
+      parsedDate = try parser.parse(dateString)
+    } catch {
+      throw WhatProgressError.invalidDateFormat(description: error.localizedDescription)
+    }
+    var modified = base
+    modified.date = parsedDate
+    return modified
+  }
+
   func render(environment: Environment) throws -> String {
     try ParsedArguments(
-      progress: progress(),
+      progress: progress(environment: environment),
       title: title.map { ParsedArguments.TitleOptions(title: $0, position: titlePosition) },
-      style: {
-        switch style {
-        case .modern: .barFill(.modern(width: width))
-        case .ascii: .barFill(.ascii(width: width))
-        }
-      }()
+      renderStyle: makeRenderStyle()
     )
     .render(environment: environment)
   }
+
+  func makeRenderStyle() -> ParsedArguments.RenderStyle {
+    switch style {
+    case .modern:
+      return .progressBar(.barFill(.modern(width: width)))
+    case .ascii:
+      return .progressBar(.barFill(.ascii(width: width)))
+    case .grid:
+      let config = YearGrid.Configuration(
+        filledSymbol: filledSymbol?.first ?? "█",
+        emptySymbol: emptySymbol?.first ?? "░",
+        todaySymbol: todaySymbol?.first,
+        showMonthLabels: showMonthLabels
+      )
+      return .yearGrid(ParsedArguments.YearGridOptions(year: year, configuration: config))
+    }
+  }
   
-  func progress() throws -> ParsedArguments.Progress {
+  func progress(environment: Environment) throws -> ParsedArguments.Progress {
     if let preset {
       return try ParsedArguments.parsePreset(
         preset,
         birthdateString: birthdate,
         expectedLifespan: expectedLifespan,
-        environment: .current
+        environment: environment
       )
     } else if hasCustomValues {
       let (start, current, end) = try zip(start, current, end).orThrow(
@@ -146,6 +205,7 @@ enum PresetKey: String, CaseIterable, Sendable {
 enum StyleKey: String, CaseIterable, Sendable {
   case modern
   case ascii
+  case grid
 }
 
 extension TitlePosition: ExpressibleByArgument {}

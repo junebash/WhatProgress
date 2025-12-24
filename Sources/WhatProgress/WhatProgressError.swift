@@ -8,7 +8,9 @@ public enum WhatProgressError: Error, CustomStringConvertible, Equatable {
   case birthdateInFuture
   case invalidRange
   case conflictingModes
-  
+  case invalidDateFormat(description: String)
+  case gridStyleRequiresYearPreset
+
   public var description: String {
     switch self {
     case .missingArguments:
@@ -23,6 +25,10 @@ public enum WhatProgressError: Error, CustomStringConvertible, Equatable {
       return "Start value must be less than end value."
     case .conflictingModes:
       return "Cannot specify both preset and custom values. Choose one mode."
+    case .invalidDateFormat:
+      return "Date must be in YYYY-MM-DD format."
+    case .gridStyleRequiresYearPreset:
+      return "The 'grid' style requires the 'year' preset (-p year)."
     }
   }
 }

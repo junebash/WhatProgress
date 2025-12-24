@@ -11,7 +11,16 @@ public enum TitlePosition: String, Sendable {
     case .above:
       return "\(title)\n\(rendering)"
     case .left:
-      return "\(title) \(rendering)"
+      let lines = rendering.split(separator: "\n", omittingEmptySubsequences: false)
+      if lines.count <= 1 {
+        return "\(title) \(rendering)"
+      }
+      let indent = String(repeating: " ", count: title.count + 1)
+      var result = "\(title) \(lines[0])"
+      for line in lines.dropFirst() {
+        result += "\n\(indent)\(line)"
+      }
+      return result
     }
   }
 }

@@ -53,7 +53,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: .customRange(range),
       title: nil,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     #expect(throws: WhatProgressError.invalidRange) {
       _ = try parsed.render(environment: makeEnvironment())
@@ -73,7 +73,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: progress,
       title: nil,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "[██████████░░░░░░░░░░] 50.0%")
@@ -85,7 +85,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: .customRange(range),
       title: nil,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "[██████████░░░░░░░░░░] 50.0%")
@@ -103,7 +103,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: progress,
       title: nil,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "[███████░░░░░░░░░░░░░] 35.0%")
@@ -121,7 +121,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: progress,
       title: titleOptions,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "Progress [██████████░░░░░░░░░░] 50.0%")
@@ -138,7 +138,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: progress,
       title: nil,
-      style: .barFill(.ascii())
+      renderStyle: .progressBar(.barFill(.ascii()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "[##########----------] 50.0%")
@@ -156,7 +156,7 @@ struct ParsedArgumentsIntegrationTests {
     let parsed = ParsedArguments(
       progress: progress,
       title: titleOptions,
-      style: .barFill(.modern())
+      renderStyle: .progressBar(.barFill(.modern()))
     )
     let output = try parsed.render(environment: makeEnvironment())
     #expect(output == "Day\n[██████████░░░░░░░░░░] 50.0%")

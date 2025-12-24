@@ -85,4 +85,42 @@ struct ProgressBarTests {
     let bar = ProgressBar(progress: 0.5, title: "Year", titlePosition: .above)
     #expect(bar.render() == "Year\n[██████████░░░░░░░░░░] 50.0%")
   }
+
+  // MARK: - Multi-line Title Rendering
+
+  @Test("title left with multi-line content indents subsequent lines")
+  func titleLeftIndentsMultipleLines() {
+    let multiLine = "Line1\nLine2\nLine3"
+    let result = TitlePosition.left.render(title: "Title", with: multiLine)
+    #expect(result == "Title Line1\n      Line2\n      Line3")
+  }
+
+  @Test("title left with single line does not add indent")
+  func titleLeftSingleLineNoIndent() {
+    let singleLine = "OnlyLine"
+    let result = TitlePosition.left.render(title: "Test", with: singleLine)
+    #expect(result == "Test OnlyLine")
+  }
+
+  @Test("title above with multi-line content preserves all lines")
+  func titleAbovePreservesMultipleLines() {
+    let multiLine = "Line1\nLine2\nLine3"
+    let result = TitlePosition.above.render(title: "Header", with: multiLine)
+    #expect(result == "Header\nLine1\nLine2\nLine3")
+  }
+
+  @Test("title left indent matches title length plus space")
+  func titleLeftIndentMatchesTitleLength() {
+    let multiLine = "A\nB"
+    let result = TitlePosition.left.render(title: "XY", with: multiLine)
+    // "XY" is 2 chars + 1 space = 3 spaces indent
+    #expect(result == "XY A\n   B")
+  }
+
+  @Test("title left with empty lines preserves them")
+  func titleLeftPreservesEmptyLines() {
+    let withEmpty = "First\n\nThird"
+    let result = TitlePosition.left.render(title: "T", with: withEmpty)
+    #expect(result == "T First\n  \n  Third")
+  }
 }

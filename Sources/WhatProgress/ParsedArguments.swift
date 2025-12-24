@@ -7,7 +7,7 @@ struct ParsedArguments: Sendable, Equatable {
   enum Progress: Sendable, Equatable {
     case preset(Preset)
     case customRange(CustomRange)
-    
+
     struct CustomRange: Sendable, Equatable {
       var start, current, end: Double
     }
@@ -30,17 +30,42 @@ struct ParsedArguments: Sendable, Equatable {
     var position: TitlePosition
   }
 
+  @CasePathable
+  enum RenderStyle: Sendable, Equatable {
+    case progressBar(ProgressBar.Style)
+    case yearGrid(YearGridOptions)
+  }
+
+  struct YearGridOptions: Sendable, Equatable {
+    var year: Int?
+    var configuration: YearGrid.Configuration
+  }
+
   var progress: Progress
   var title: TitleOptions?
-  var style: ProgressBar.Style
+  var renderStyle: RenderStyle
 
   func render(environment: Environment) throws(WhatProgressError) -> String {
-    ProgressBar(
-      progress: try ProgressCalculator(environment: environment).calculate(progress),
-      title: title?.title,
-      titlePosition: title?.position ?? .left,
-      style: style
-    ).render()
+    let rendering: String
+    switch renderStyle {
+    case .progressBar(let style):
+      rendering = ProgressBar(
+        progress: try ProgressCalculator(environment: environment).calculate(progress),
+        title: nil,
+        titlePosition: .left,
+        style: style
+      ).render()
+    case .yearGrid(let options):
+      let effectiveYear = options.year ?? environment.calendar.component(.year, from: environment.date)
+      let grid = YearGrid(
+        year: effectiveYear,
+        referenceDate: environment.date,
+        calendar: environment.calendar,
+        configuration: options.configuration
+      )
+      rendering = grid.render()
+    }
+    return title.map { $0.position.render(title: $0.title, with: rendering) } ?? rendering
   }
 
   static func parsePreset(
