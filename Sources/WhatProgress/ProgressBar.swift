@@ -30,25 +30,42 @@ public struct ProgressBar: Sendable {
     public struct BarFill: Sendable, Equatable {
       let filledChar: Character
       let emptyChar: Character
+      let shade33Char: Character
+      let shade67Char: Character
       let width: Int
-      
+
       public static func ascii(width: Int = 20) -> Self {
-        Self(filledChar: "#", emptyChar: "-", width: width)
+        Self(filledChar: "#", emptyChar: ".", shade33Char: "-", shade67Char: "=", width: width)
       }
-      
+
       public static func modern(width: Int = 20) -> Self {
-        Self(filledChar: "█", emptyChar: "░", width: width)
+        Self(filledChar: "█", emptyChar: "░", shade33Char: "▒", shade67Char: "▓", width: width)
       }
-      
+
       func render(progress: Double) -> String {
-        // Calculate filled and empty portions
-        let filledCount = min(width, Int((progress * Double(width)).rounded()))
-        let emptyCount = max(0, width - filledCount)
-        // Build the bar
-        let filledPart = String(repeating: filledChar, count: filledCount)
+        let exactFilled = progress * Double(width)
+        let fullCount = min(width, Int(exactFilled))
+        let fractional = exactFilled - Double(fullCount)
+
+        // Determine partial character based on fractional progress within the block
+        let partialChar: Character? = {
+          guard fullCount < width else { return nil }
+          switch fractional {
+          case 0..<0.17: return nil
+          case 0.17..<0.50: return shade33Char
+          case 0.50..<0.83: return shade67Char
+          default: return filledChar
+          }
+        }()
+
+        let emptyCount = max(0, width - fullCount - (partialChar != nil ? 1 : 0))
+
+        let filledPart = String(repeating: filledChar, count: fullCount)
+        let partialPart = partialChar.map(String.init) ?? ""
         let emptyPart = String(repeating: emptyChar, count: emptyCount)
         let percentage = String(format: "%.1f%%", progress * 100)
-        return "[\(filledPart)\(emptyPart)] \(percentage)"
+
+        return "[\(filledPart)\(partialPart)\(emptyPart)] \(percentage)"
       }
     }
     

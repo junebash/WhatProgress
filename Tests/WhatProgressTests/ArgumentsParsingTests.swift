@@ -141,7 +141,7 @@ struct ParsedArgumentsIntegrationTests {
       renderStyle: .progressBar(.barFill(.ascii()))
     )
     let output = try parsed.render(environment: makeEnvironment())
-    #expect(output == "[##########----------] 50.0%")
+    #expect(output == "[##########..........] 50.0%")
   }
 
   @Test("renders title above when position is above")

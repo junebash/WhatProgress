@@ -62,13 +62,13 @@ struct CLITests {
   @Test("ASCII style produces exact ASCII output")
   func asciiStyle() throws {
     let output = try runCLI(args: ["-s", "0", "-c", "50", "-e", "100", "--style", "ascii"])
-    #expect(output == "[##########----------] 50.0%")
+    #expect(output == "[##########..........] 50.0%")
   }
 
   @Test("ASCII style with 0%")
   func asciiStyle0Percent() throws {
     let output = try runCLI(args: ["-s", "0", "-c", "0", "-e", "100", "--style", "ascii"])
-    #expect(output == "[--------------------] 0.0%")
+    #expect(output == "[....................] 0.0%")
   }
 
   @Test("ASCII style with 100%")
@@ -141,7 +141,8 @@ struct CLITests {
     let output = try runCLI(args: ["-p", "day"])
 
     // Must match exact format: [<20 chars>] <percentage>%
-    let pattern = /^\[[\u{2588}\u{2591}]{20}\] \d+\.\d+%$/
+    // Characters: █ (full), ▓ (67%), ▒ (33%), ░ (empty)
+    let pattern = /^\[[\u{2588}\u{2593}\u{2592}\u{2591}]{20}\] \d+\.\d+%$/
     #expect(output.wholeMatch(of: pattern) != nil)
   }
 
@@ -149,7 +150,7 @@ struct CLITests {
   func weekPresetFormat() throws {
     let output = try runCLI(args: ["-p", "week"])
 
-    let pattern = /^\[[\u{2588}\u{2591}]{20}\] \d+\.\d+%$/
+    let pattern = /^\[[\u{2588}\u{2593}\u{2592}\u{2591}]{20}\] \d+\.\d+%$/
     #expect(output.wholeMatch(of: pattern) != nil)
   }
 
@@ -157,7 +158,7 @@ struct CLITests {
   func monthPresetFormat() throws {
     let output = try runCLI(args: ["-p", "month"])
 
-    let pattern = /^\[[\u{2588}\u{2591}]{20}\] \d+\.\d+%$/
+    let pattern = /^\[[\u{2588}\u{2593}\u{2592}\u{2591}]{20}\] \d+\.\d+%$/
     #expect(output.wholeMatch(of: pattern) != nil)
   }
 
@@ -165,7 +166,7 @@ struct CLITests {
   func yearPresetFormat() throws {
     let output = try runCLI(args: ["-p", "year"])
 
-    let pattern = /^\[[\u{2588}\u{2591}]{20}\] \d+\.\d+%$/
+    let pattern = /^\[[\u{2588}\u{2593}\u{2592}\u{2591}]{20}\] \d+\.\d+%$/
     #expect(output.wholeMatch(of: pattern) != nil)
   }
 
@@ -174,7 +175,7 @@ struct CLITests {
     let output = try runCLI(args: ["-p", "life", "-b", "1990-01-15"])
 
     // Must match exact format and percentage must be reasonable
-    let pattern = /^\[[\u{2588}\u{2591}]{20}\] (\d+\.\d+)%$/
+    let pattern = /^\[[\u{2588}\u{2593}\u{2592}\u{2591}]{20}\] (\d+\.\d+)%$/
     let match = try #require(output.wholeMatch(of: pattern))
     let percentageStr = String(match.1)
     let percentage = try #require(Double(percentageStr))

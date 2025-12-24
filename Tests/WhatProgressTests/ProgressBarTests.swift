@@ -10,8 +10,10 @@ struct ProgressBarTests {
 
   @Test("renders progress bar with correct percentage format")
   func rendersPercentageWithOneDecimal() {
+    // 58.4% of 20 blocks = 11.68 blocks
+    // 11 full blocks + 68% of next block (in 50-83% range) shows ▓
     let bar = ProgressBar(progress: 0.584)
-    #expect(bar.render() == "[████████████░░░░░░░░] 58.4%")
+    #expect(bar.render() == "[███████████▓░░░░░░░░] 58.4%")
   }
 
   @Test("renders 0% progress correctly")
@@ -49,7 +51,7 @@ struct ProgressBarTests {
   @Test("renders ASCII bar when requested")
   func rendersAsciiWhenRequested() {
     let bar = ProgressBar(progress: 0.5, style: .barFill(.ascii()))
-    #expect(bar.render() == "[##########----------] 50.0%")
+    #expect(bar.render() == "[##########..........] 50.0%")
   }
 
   // MARK: - Bar Width
@@ -122,5 +124,72 @@ struct ProgressBarTests {
     let withEmpty = "First\n\nThird"
     let result = TitlePosition.left.render(title: "T", with: withEmpty)
     #expect(result == "T First\n  \n  Third")
+  }
+
+  // MARK: - Partial Progress Shading
+
+  @Test("partial progress shows 33% shade character")
+  func partialProgress33Shade() {
+    // With width 10, each block = 10%. At 12%, we have 1 full block + 20% of next block
+    // 20% is in the 17-50% range, so it shows ▒ (33% shade)
+    let bar = ProgressBar(progress: 0.12, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[█▒░░░░░░░░] 12.0%")
+  }
+
+  @Test("partial progress shows 67% shade character")
+  func partialProgress67Shade() {
+    // With width 10, each block = 10%. At 16%, we have 1 full block + 60% of next block
+    // 60% is in the 50-83% range, so it shows ▓ (67% shade)
+    let bar = ProgressBar(progress: 0.16, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[█▓░░░░░░░░] 16.0%")
+  }
+
+  @Test("partial progress rounds to full block at 83%+ of block")
+  func partialProgressRoundsToFull() {
+    // With width 10, each block = 10%. At 19%, we have 1 full block + 90% of next block
+    // 90% is >= 83%, so it shows █ (full)
+    let bar = ProgressBar(progress: 0.19, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[██░░░░░░░░] 19.0%")
+  }
+
+  @Test("partial progress shows empty below 17% of block")
+  func partialProgressShowsEmpty() {
+    // With width 10, each block = 10%. At 11%, we have 1 full block + 10% of next block
+    // 10% is < 17%, so no partial character shown
+    let bar = ProgressBar(progress: 0.11, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[█░░░░░░░░░] 11.0%")
+  }
+
+  @Test("ASCII partial progress shows dash for 33% shade")
+  func asciiPartialProgress33Shade() {
+    // With width 10, each block = 10%. At 12%, we have 1 full block + 20% of next block
+    let bar = ProgressBar(progress: 0.12, style: .barFill(.ascii(width: 10)))
+    #expect(bar.render() == "[#-........] 12.0%")
+  }
+
+  @Test("ASCII partial progress shows equals for 67% shade")
+  func asciiPartialProgress67Shade() {
+    // With width 10, each block = 10%. At 16%, we have 1 full block + 60% of next block
+    let bar = ProgressBar(progress: 0.16, style: .barFill(.ascii(width: 10)))
+    #expect(bar.render() == "[#=........] 16.0%")
+  }
+
+  @Test("no partial character at exact block boundaries")
+  func noPartialAtExactBoundary() {
+    // At exactly 50%, no fractional part, so no partial character
+    let bar = ProgressBar(progress: 0.5, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[█████░░░░░] 50.0%")
+  }
+
+  @Test("no partial character at 100%")
+  func noPartialAt100Percent() {
+    let bar = ProgressBar(progress: 1.0, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[██████████] 100.0%")
+  }
+
+  @Test("no partial character at 0%")
+  func noPartialAt0Percent() {
+    let bar = ProgressBar(progress: 0.0, style: .barFill(.modern(width: 10)))
+    #expect(bar.render() == "[░░░░░░░░░░] 0.0%")
   }
 }
